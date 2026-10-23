@@ -1,0 +1,59 @@
+Build couch-libmozjs185 on Debian 12 (GCC 12) and 13 (GCC 14)
+
+Python 2 comes from the build tools, not a package, so it is no longer a
+build dependency. Compiler flags let the 2011 code build with current GCC,
+and a shlibs file replaces the symbols file, whose list no longer matches
+what current GCC exports (inside.sh deletes it).
+
+diff -ru a/debian/control b/debian/control
+--- a/debian/control
++++ b/debian/control
+@@ -2,7 +2,7 @@
+ Section: libs
+ Priority: extra
+ Maintainer: CouchDB Developers <dev@couchdb.apache.org>
+-Build-Depends: debhelper (>= 7.0.50~), libffi-dev, libnspr4-dev (>= 4.7.0), zip, pkg-kde-tools, python, pkg-config, autotools-dev
++Build-Depends: debhelper (>= 7.0.50~), libffi-dev, libnspr4-dev (>= 4.7.0), zip, pkg-kde-tools, pkg-config, autotools-dev
+ Standards-Version: 3.9.2
+ Homepage: https://developer.mozilla.org/en/docs/Mozilla/Projects/SpiderMonkey/Releases/1.8.5
+ 
+diff -ru a/debian/rules b/debian/rules
+--- a/debian/rules
++++ b/debian/rules
+@@ -1,5 +1,20 @@
+ #!/usr/bin/make -f
+ 
++# Added by freepenguins for GCC 12 (Debian 12) and GCC 14 (Debian 13).
++export DEB_CFLAGS_MAINT_APPEND = -fno-strict-aliasing -fno-delete-null-pointer-checks -fno-tree-vrp -fcommon -Wno-error=implicit-int -Wno-error=implicit-function-declaration -Wno-error=incompatible-pointer-types -Wno-error=int-conversion
++export DEB_CXXFLAGS_MAINT_APPEND = -std=gnu++98 -fpermissive -fno-strict-aliasing -fno-delete-null-pointer-checks -fno-tree-vrp -fno-lifetime-dse -fno-schedule-insns2 -Wno-narrowing
++export DEB_BUILD_MAINT_OPTIONS = hardening=-format
++DPKG_EXPORT_BUILDFLAGS = 1
++include /usr/share/dpkg/buildflags.mk
++
++# GCC 14 (Debian 13) rejects the K&R C in autoconf 2.13's own tests
++# (`foo(){}`), so configure misdetects the compiler; -fpermissive makes those
++# warnings again.
++ifeq ($(shell test $$(gcc -dumpversion | cut -d. -f1) -ge 14 && echo yes),yes)
++export CC = gcc -fpermissive
++endif
++
++
+ DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+ DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+ 
+@@ -17,7 +32,7 @@
+ endif
+ 
+ %:
+-	dh $@ --sourcedirectory=$(SRCDIR) --with pkgkde-symbolshelper,autotools_dev
++	dh $@ --sourcedirectory=$(SRCDIR) --with autotools_dev
+ 
+ # dh_auto_configure does not properly handle autoconf2.13 generated configure
+ # scripts, so we call configure ourselves.
+@@ -42,3 +57,6 @@
+ # bintray doesn't support xz uploads :(
+ override_dh_builddeb:
+ 	dh_builddeb -- -Zgzip
++
++override_dh_makeshlibs:
++	dh_makeshlibs -V

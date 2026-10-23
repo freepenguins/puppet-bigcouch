@@ -1,0 +1,19 @@
+couchjs: take the version from BIGCOUCH_VSN
+
+couchjs -V prints the version SConscript gets from `git describe`, which
+fails without git history. The package build sets BIGCOUCH_VSN to what
+git describe gave at the bigcouch-0.4.2b tag (as in the couch app).
+
+--- a/couchjs/c_src/SConscript
++++ b/couchjs/c_src/SConscript
+@@ -105,7 +105,9 @@
+ 
+     ## Define properties for -h / -V
+ 
+-    (_, vsn) = runcmd("git describe --match 1.*")
++    # The build passes the version; a source tree without git history
++    # has nothing for `git describe` to find.
++    vsn = os.getenv("BIGCOUCH_VSN") or runcmd("git describe --match 1.*")[1]
+     conf.Define("PACKAGE_STRING", '"%s"' % vsn.rstrip())
+     conf.Define("PACKAGE_NAME", '"Cloudant BigCouch"')
+     conf.Define("PACKAGE_BUGREPORT", '"https://github.com/cloudant/bigcouch/issues"')

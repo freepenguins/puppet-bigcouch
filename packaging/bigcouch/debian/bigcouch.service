@@ -1,0 +1,17 @@
+[Unit]
+Description=BigCouch
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=bigcouch
+Group=bigcouch
+Environment=HOME=/var/lib/bigcouch
+WorkingDirectory=/var/lib/bigcouch
+RuntimeDirectory=bigcouch
+ExecStart=/opt/bigcouch/bin/bigcouch
+Restart=always
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

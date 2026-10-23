@@ -1,0 +1,22 @@
+# Erlang VM arguments for BigCouch. /opt/bigcouch/bin/bigcouch reads
+# /etc/bigcouch/vm.args; this is the default copied there on first install.
+
+# Node name. With no host part, -name uses this server's fully qualified
+# name.
+-name bigcouch
+
+# Nodes of one cluster must share the cookie. Change it.
+-setcookie monster
+
+-sasl errlog_type error
++K true
++A 16
+-env ERL_MAX_PORTS 65536
+-kernel inet_dist_listen_min 11500 inet_dist_listen_max 11999
+
+# In the foreground, under systemd.
++Bd -noinput
+
+# Later files win; changes made through the _config API are saved to the
+# last one.
+-couch_ini /opt/bigcouch/etc/default.ini /etc/bigcouch/local.ini

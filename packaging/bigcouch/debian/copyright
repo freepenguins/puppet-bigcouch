@@ -1,0 +1,23 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: BigCouch
+Source: https://github.com/cloudant/bigcouch
+
+Files: *
+Copyright: 2010-2013 Cloudant
+           The Apache Software Foundation (Apache CouchDB)
+License: Apache-2.0
+
+Files: opt/bigcouch/erts-* opt/bigcouch/lib/kernel-* opt/bigcouch/lib/stdlib-*
+ opt/bigcouch/lib/crypto-* opt/bigcouch/lib/ssl-* opt/bigcouch/lib/inets-*
+ opt/bigcouch/lib/sasl-* opt/bigcouch/lib/xmerl-* opt/bigcouch/lib/runtime_tools-*
+Copyright: Ericsson AB
+License: Erlang Public License 1.1
+ See https://www.erlang.org/EPLICENCE
+
+Files: debian/*
+Copyright: 2026 freepenguins
+License: Apache-2.0
+
+License: Apache-2.0
+ On Debian systems, the full text of the Apache License 2.0 is in
+ /usr/share/common-licenses/Apache-2.0.

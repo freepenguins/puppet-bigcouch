@@ -1,0 +1,28 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+  configure)
+    if ! getent passwd bigcouch >/dev/null; then
+      adduser --system --quiet --group \
+        --home /var/lib/bigcouch --no-create-home \
+        --shell /usr/sbin/nologin --gecos BigCouch bigcouch
+    fi
+    # Defaults, only where there is no configuration yet.
+    for f in vm.args local.ini; do
+      if [ ! -e /etc/bigcouch/$f ]; then
+        install -m 0640 -o root -g bigcouch /opt/bigcouch/etc/$f /etc/bigcouch/$f
+      fi
+    done
+    chown root:bigcouch /etc/bigcouch
+    chmod 0755 /etc/bigcouch
+    # BigCouch saves _config changes to local.ini.
+    chown bigcouch:bigcouch /etc/bigcouch/local.ini
+    chown bigcouch:bigcouch /var/lib/bigcouch /var/log/bigcouch
+    chmod 0750 /var/lib/bigcouch /var/log/bigcouch
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

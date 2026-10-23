@@ -1,0 +1,26 @@
+<%- |
+  String[1]                    $node_name,
+  String[1]                    $cookie,
+  Array[Stdlib::Absolutepath]  $ini_files,
+| -%>
+# Managed by Puppet (bigcouch). Erlang VM arguments for BigCouch.
+
+# Node name. Shard maps record it, so keep it when moving database files
+# between servers (replication doesn't care).
+-name <%= $node_name %>
+
+# Nodes of one cluster must share the cookie.
+-setcookie <%= $cookie %>
+
+-sasl errlog_type error
++K true
++A 16
+-env ERL_MAX_PORTS 65536
+-kernel inet_dist_listen_min 11500 inet_dist_listen_max 11999
+
+# Runs in the foreground under systemd.
++Bd -noinput
+
+# Configuration, in order; later files win and BigCouch writes changes made
+# through its API to the last one.
+-couch_ini <%= $ini_files.join(' ') %>

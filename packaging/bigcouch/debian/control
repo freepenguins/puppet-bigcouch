@@ -1,0 +1,29 @@
+Source: bigcouch
+Section: database
+Priority: optional
+Maintainer: freepenguins <2281089+freepenguins@users.noreply.github.com>
+Standards-Version: 4.6.2
+Build-Depends: debhelper-compat (= 13),
+               couch-libmozjs185-dev,
+               libcurl4-openssl-dev,
+               libicu-dev,
+               libnspr4-dev,
+               libcrypt-dev
+Homepage: https://github.com/cloudant/bigcouch
+Rules-Requires-Root: binary-targets
+
+Package: bigcouch
+Architecture: any
+Depends: adduser,
+         couch-libmozjs185-1.0,
+         procps,
+         ${misc:Depends},
+         ${shlibs:Depends}
+Conflicts: bigcouch-unofficial
+Description: Cloudant's clustered CouchDB
+ BigCouch is Cloudant's dynamo-style clustered version of Apache CouchDB 1.1.
+ Its features were merged into Apache CouchDB 2.0.
+ .
+ This is BigCouch 0.4.2b, built for Debian 12 and 13 with Erlang/OTP
+ R16B03-1 bundled in /opt/bigcouch.
+ Its configuration is in /etc/bigcouch.

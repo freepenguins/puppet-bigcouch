@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+  purge)
+    # Databases in /var/lib/bigcouch are kept; remove them by hand.
+    rm -rf /etc/bigcouch /var/log/bigcouch
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0
