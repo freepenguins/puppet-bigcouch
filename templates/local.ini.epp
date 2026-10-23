@@ -1,0 +1,10 @@
+<%- | Hash[String, Hash] $sections | -%>
+; Managed by Puppet (bigcouch). Changes here are overwritten; settings
+; changed through the _config API go to runtime.ini.
+<% $sections.keys.sort.each |$section| { -%>
+
+[<%= $section %>]
+<%   $sections[$section].keys.sort.each |$key| { -%>
+<%= $key %> = <%= $sections[$section][$key] %>
+<%   } -%>
+<% } -%>
