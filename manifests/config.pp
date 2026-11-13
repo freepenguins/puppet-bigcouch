@@ -1,4 +1,4 @@
-# @summary Writes local.ini and vm.args, and creates the user and directories.
+# @summary Writes local.ini and vm.args, and creates the user (if managed) and directories.
 #
 # Runs before the package is installed (see the bigcouch class), so the
 # package's postinst finds the user and configuration already in place and
@@ -10,20 +10,31 @@ class bigcouch::config {
 
   $dir = $bigcouch::config_dir
 
-  group { $bigcouch::group:
-    ensure => present,
-    system => true,
+  if $bigcouch::manage_group {
+    group { $bigcouch::group:
+      ensure => present,
+      gid    => $bigcouch::gid,
+      system => true,
+      before => File[$dir],
+    }
   }
 
-  user { $bigcouch::user:
-    ensure     => present,
-    system     => true,
-    gid        => $bigcouch::group,
-    home       => $bigcouch::data_dir,
-    managehome => false,
-    shell      => '/usr/sbin/nologin',
-    comment    => 'BigCouch',
-    require    => Group[$bigcouch::group],
+  if $bigcouch::manage_user {
+    user { $bigcouch::user:
+      ensure     => present,
+      uid        => $bigcouch::uid,
+      gid        => $bigcouch::group,
+      system     => true,
+      home       => $bigcouch::data_dir,
+      managehome => false,
+      shell      => '/usr/sbin/nologin',
+      comment    => 'BigCouch',
+      before     => File[$dir],
+    }
+
+    if $bigcouch::manage_group {
+      Group[$bigcouch::group] -> User[$bigcouch::user]
+    }
   }
 
   file { $dir:

@@ -45,7 +45,8 @@ The class:
 
 * The `bigcouch` package (and `couch-libmozjs185-1.0`), its service and
   its `/opt/bigcouch`, and with `repository` an APT source.
-* The `bigcouch` user and group, `/var/lib/bigcouch` (databases and view
+* The `bigcouch` user and group (unless `manage_user`/`manage_group` are
+  false), `/var/lib/bigcouch` (databases and view
   indexes) and `/var/log/bigcouch`.
 * `/etc/bigcouch`: `local.ini` (managed), `runtime.ini` (created once;
   changes made through BigCouch's `_config` API are saved there) and
@@ -128,6 +129,29 @@ For an emulator flag the module already sets (`+A 16`, `+K true`), the
 later line wins. `-name`, `-setcookie` and `-couch_ini` come from
 `node_name`, `cookie` and the ini files; don't repeat them here.
 
+### The user and group
+
+By default the module creates the `bigcouch` system user and group before
+the package is installed. To fix their ids, or to leave them to another
+class or a directory service:
+
+```puppet
+class { 'bigcouch':
+  uid => 990,
+  gid => 990,
+}
+
+class { 'bigcouch':
+  manage_user  => false,
+  manage_group => false,
+}
+```
+
+With `manage_user` or `manage_group` false, the user or group must exist
+before the class runs, because the module's files are owned by them. A
+changed `uid` or `gid` changes the account but not the ownership of files
+already on disk.
+
 ### Node name and cookie
 
 `node_name` defaults to `bigcouch@<fqdn>`, what the package's own
@@ -170,6 +194,9 @@ See [REFERENCE.md](REFERENCE.md).
 * BigCouch 0.4.2b, Erlang/OTP R16B03-1 and the OpenSSL 1.0.2u its crypto is
   linked against are all unmaintained. Keep BigCouch on 127.0.0.1, as by
   default, or on a trusted network.
+* The package's systemd unit runs BigCouch as `bigcouch` and its postinst
+  creates and chowns `bigcouch`, so keep `user` and `group` at
+  `bigcouch` unless you also override the unit.
 * No TLS; put a proxy in front if BigCouch must be reached over a network.
 
 ## Development

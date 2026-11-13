@@ -80,6 +80,18 @@
 #   The user BigCouch runs as, which owns `data_dir`.
 # @param group
 #   The group of `user`.
+# @param manage_user
+#   Whether to create `user` (a system user with home `data_dir` and no
+#   login shell). With false the user must already exist, from another
+#   class or a directory service, before the class runs: the files the
+#   module writes are owned by it.
+# @param manage_group
+#   Whether to create `group` (a system group). With false the group must
+#   already exist.
+# @param uid
+#   The user's uid, when `manage_user` is true. Unset, the system picks one.
+# @param gid
+#   The group's gid, when `manage_group` is true. Unset, the system picks one.
 # @param service_name
 #   The service the package installs.
 # @param settings
@@ -107,6 +119,10 @@ class bigcouch (
   Stdlib::Absolutepath                               $log_file        = '/var/log/bigcouch/bigcouch.log',
   String[1]                                          $user            = 'bigcouch',
   String[1]                                          $group           = 'bigcouch',
+  Boolean                                            $manage_user     = true,
+  Boolean                                            $manage_group    = true,
+  Optional[Integer[0]]                               $uid             = undef,
+  Optional[Integer[0]]                               $gid             = undef,
   String[1]                                          $service_name    = 'bigcouch',
   Hash[String[1], Hash[String[1], Scalar]]           $settings        = {},
   Array[Pattern[/\A[^\r\n]+\z/]]                      $vm_args         = [],

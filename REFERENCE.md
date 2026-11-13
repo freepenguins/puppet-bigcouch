@@ -12,7 +12,7 @@
 
 #### Private Classes
 
-* `bigcouch::config`: Writes local.ini and vm.args, and creates the user and directories.
+* `bigcouch::config`: Writes local.ini and vm.args, and creates the user (if managed) and directories.
 * `bigcouch::install`: Installs the BigCouch package.
 * `bigcouch::repo`: Adds the APT repository with the BigCouch packages, if one is given.
 * `bigcouch::service`: Runs BigCouch with the package's own systemd unit.
@@ -98,6 +98,10 @@ The following parameters are available in the `bigcouch` class:
 * [`log_file`](#-bigcouch--log_file)
 * [`user`](#-bigcouch--user)
 * [`group`](#-bigcouch--group)
+* [`manage_user`](#-bigcouch--manage_user)
+* [`manage_group`](#-bigcouch--manage_group)
+* [`uid`](#-bigcouch--uid)
+* [`gid`](#-bigcouch--gid)
 * [`service_name`](#-bigcouch--service_name)
 * [`settings`](#-bigcouch--settings)
 * [`vm_args`](#-bigcouch--vm_args)
@@ -228,6 +232,42 @@ Data type: `String[1]`
 The group of `user`.
 
 Default value: `'bigcouch'`
+
+##### <a name="-bigcouch--manage_user"></a>`manage_user`
+
+Data type: `Boolean`
+
+Whether to create `user` (a system user with home `data_dir` and no
+login shell). With false the user must already exist, from another
+class or a directory service, before the class runs: the files the
+module writes are owned by it.
+
+Default value: `true`
+
+##### <a name="-bigcouch--manage_group"></a>`manage_group`
+
+Data type: `Boolean`
+
+Whether to create `group` (a system group). With false the group must
+already exist.
+
+Default value: `true`
+
+##### <a name="-bigcouch--uid"></a>`uid`
+
+Data type: `Optional[Integer[0]]`
+
+The user's uid, when `manage_user` is true. Unset, the system picks one.
+
+Default value: `undef`
+
+##### <a name="-bigcouch--gid"></a>`gid`
+
+Data type: `Optional[Integer[0]]`
+
+The group's gid, when `manage_group` is true. Unset, the system picks one.
+
+Default value: `undef`
 
 ##### <a name="-bigcouch--service_name"></a>`service_name`
 

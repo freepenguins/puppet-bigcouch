@@ -56,6 +56,29 @@ describe 'bigcouch' do
         end
       end
 
+      context 'with uid and gid' do
+        let(:params) { { uid: 990, gid: 991 } }
+
+        it { is_expected.to contain_group('bigcouch').with(gid: 991, system: true).that_comes_before('User[bigcouch]') }
+        it { is_expected.to contain_user('bigcouch').with(uid: 990, gid: 'bigcouch').that_comes_before('File[/etc/bigcouch]') }
+      end
+
+      context 'with manage_user and manage_group false' do
+        let(:params) { { manage_user: false, manage_group: false } }
+
+        it { is_expected.not_to contain_user('bigcouch') }
+        it { is_expected.not_to contain_group('bigcouch') }
+        it { is_expected.to contain_file('/var/lib/bigcouch').with(owner: 'bigcouch', group: 'bigcouch') }
+        it { is_expected.to contain_class('bigcouch::config').that_comes_before('Class[bigcouch::install]') }
+      end
+
+      context 'with only manage_group false' do
+        let(:params) { { manage_group: false } }
+
+        it { is_expected.not_to contain_group('bigcouch') }
+        it { is_expected.to contain_user('bigcouch').with(gid: 'bigcouch') }
+      end
+
       context 'with vm_args' do
         let(:params) { { vm_args: ['+P 1048576', '-kernel net_ticktime 30'] } }
 
