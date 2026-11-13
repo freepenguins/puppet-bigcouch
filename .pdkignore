@@ -49,4 +49,3 @@ bolt-debug.log
 /.vscode/
 /.sync.yml
 /.devcontainer/
-/packaging/

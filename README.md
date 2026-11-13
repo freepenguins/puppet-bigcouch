@@ -1,8 +1,9 @@
 # bigcouch
 
 Installs and configures [BigCouch](https://github.com/cloudant/bigcouch)
-0.4, Cloudant's clustered CouchDB, as one node on Debian 12 and 13. This
-repository also builds the packages.
+0.4, Cloudant's clustered CouchDB, as one node on Debian 12 and 13, from an
+APT repository. The packages are built by
+[puppet-bigcouch-packaging](https://github.com/freepenguins/puppet-bigcouch-packaging).
 
 ## Table of contents
 
@@ -21,11 +22,11 @@ repository also builds the packages.
 BigCouch 0.4 is CouchDB 1.1 with Dynamo-style clustering; its features went
 into Apache CouchDB 2.0, and it has been unmaintained since 2013. Nothing
 publishes it for current Debian: its last packages were Cloudant's, for
-Ubuntu releases long out of support. `packaging/` builds `bigcouch` 0.4.2b,
-its last release, with
-Erlang/OTP R16B03-1 bundled, plus `couch-libmozjs185-1.0` (SpiderMonkey
-1.8.5, for couchjs), for bookworm and trixie. See
-[Building the packages](#building-the-packages).
+Ubuntu releases long out of support.
+[puppet-bigcouch-packaging](https://github.com/freepenguins/puppet-bigcouch-packaging) builds `bigcouch` 0.4.2b, its last
+release, with Erlang/OTP R16B03-1 bundled, plus `couch-libmozjs185-1.0`
+(SpiderMonkey 1.8.5, for couchjs), for bookworm and trixie, and an APT
+repository of them. See [The packages](#the-packages).
 
 The class:
 
@@ -56,7 +57,8 @@ The class:
 * [puppetlabs/stdlib](https://forge.puppet.com/modules/puppetlabs/stdlib)
   and [puppetlabs/apt](https://forge.puppet.com/modules/puppetlabs/apt).
 * The `bigcouch` and `couch-libmozjs185-1.0` packages in an APT repository:
-  build them with `packaging/` and publish them with `packaging/repo.sh`.
+  build and publish them with
+  [puppet-bigcouch-packaging](https://github.com/freepenguins/puppet-bigcouch-packaging) (`build.sh`, `repo.sh`).
 
 ### Beginning with bigcouch
 
@@ -117,17 +119,17 @@ class { 'bigcouch':
 `-name bigcouch` becomes. Set it before the first run. `cookie` defaults to a random string
 that stays the same for the node; nodes of one cluster must share it.
 
-### Building the packages
+### The packages
 
-On a machine with Docker:
+The `bigcouch` and `couch-libmozjs185-1.0` packages are built and
+published by [puppet-bigcouch-packaging](https://github.com/freepenguins/puppet-bigcouch-packaging), on a machine with Docker:
 
 ```bash
-packaging/build.sh bookworm                 # or trixie; into packaging/out/<release>/
-packaging/repo.sh /srv/apt/bigcouch <GPG key ID>
+./build.sh bookworm                         # or trixie; into out/<release>/
+./repo.sh /srv/apt/bigcouch <GPG key ID>    # an APT repository to give as `repository`
 ```
 
-See [packaging/README.md](packaging/README.md): what the packages contain,
-and the patches.
+Its README lists what the packages contain and the patches.
 
 ### Moving from another server
 
@@ -165,5 +167,5 @@ bundle exec rake lint syntax metadata_lint rubocop
 
 ## Credits
 
-BigCouch is by Cloudant (Apache-2.0). Apache CouchDB and the SpiderMonkey
-packaging in `packaging/` are by the Apache Software Foundation.
+BigCouch is by Cloudant (Apache-2.0); Apache CouchDB is by the Apache
+Software Foundation.

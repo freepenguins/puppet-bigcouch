@@ -33,6 +33,3 @@
 .plan_cache.json
 .rerun.json
 bolt-debug.log
-/packaging/.cache/
-/packaging/.work/
-/packaging/out/

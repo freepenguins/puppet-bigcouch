@@ -12,12 +12,6 @@
   unmanaged: true
 .github/workflows/fork_ci_label_guard.yml:
   unmanaged: true
-# packaging/ builds the bigcouch packages; it isn't part of the module.
-.gitignore:
-  paths:
-    - '/packaging/.cache/'
-    - '/packaging/.work/'
-    - '/packaging/out/'
 .pdkignore:
   paths:
     - '/.fixtures.yml'
@@ -36,4 +30,3 @@
     - '/.vscode/'
     - '/.sync.yml'
     - '/.devcontainer/'
-    - '/packaging/'

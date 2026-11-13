@@ -8,7 +8,7 @@ class bigcouch::repo {
     # With only `name` and `source` in `key`, apt writes a keyring and
     # signed-by instead of using apt-key.
     apt::source { 'bigcouch':
-      *             => { 'comment' => 'BigCouch packages (freepenguins-bigcouch packaging/)' } + $bigcouch::repository,
+      *             => { 'comment' => 'BigCouch packages' } + $bigcouch::repository,
       notify_update => true,
     }
     Apt::Source['bigcouch'] -> Class['apt::update']

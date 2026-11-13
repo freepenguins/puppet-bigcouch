@@ -27,7 +27,7 @@
 
 BigCouch is Cloudant's clustered CouchDB 1.1, whose features went into
 CouchDB 2. Nothing publishes BigCouch packages for Debian 12 or 13;
-`packaging/` in this module's repository builds `bigcouch` 0.4.2b (with
+[puppet-bigcouch-packaging](https://github.com/freepenguins/puppet-bigcouch-packaging) builds `bigcouch` 0.4.2b (with
 Erlang/OTP R16B03-1) and the `couch-libmozjs185-1.0` it needs. Publish
 them in an APT repository and give it as `repository`, or leave
 `repository` unset to install `package_name` from whatever APT sources the
