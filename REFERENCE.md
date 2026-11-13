@@ -71,6 +71,14 @@ class { 'bigcouch':
 }
 ```
 
+##### More Erlang VM arguments
+
+```puppet
+class { 'bigcouch':
+  vm_args => ['+P 1048576', '-kernel net_ticktime 30'],
+}
+```
+
 #### Parameters
 
 The following parameters are available in the `bigcouch` class:
@@ -92,6 +100,7 @@ The following parameters are available in the `bigcouch` class:
 * [`group`](#-bigcouch--group)
 * [`service_name`](#-bigcouch--service_name)
 * [`settings`](#-bigcouch--settings)
+* [`vm_args`](#-bigcouch--vm_args)
 
 ##### <a name="-bigcouch--admin_username"></a>`admin_username`
 
@@ -236,6 +245,18 @@ More settings for `local.ini`, as `{ section => { key => value } }`,
 merged over the module's (yours win).
 
 Default value: `{}`
+
+##### <a name="-bigcouch--vm_args"></a>`vm_args`
+
+Data type: `Array[Pattern[/\A[^\r\n]+\z/]]`
+
+More lines for `vm.args`, written as given after the module's own, such
+as `'+P 1048576'` or `'-kernel net_ticktime 30'`. For an emulator flag
+the module already sets (`+A`, `+K`), the later line wins. Don't set
+`-name`, `-setcookie` or `-couch_ini` here: use `node_name`, `cookie`
+and `settings`.
+
+Default value: `[]`
 
 ## Functions
 

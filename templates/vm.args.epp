@@ -2,6 +2,7 @@
   String[1]                    $node_name,
   String[1]                    $cookie,
   Array[Stdlib::Absolutepath]  $ini_files,
+  Array[String[1]]             $extra = [],
 | -%>
 # Managed by Puppet (bigcouch). Erlang VM arguments for BigCouch.
 
@@ -24,3 +25,10 @@
 # Configuration, in order; later files win and BigCouch writes changes made
 # through its API to the last one.
 -couch_ini <%= $ini_files.join(' ') %>
+<%- unless $extra.empty { -%>
+
+# From the bigcouch class's vm_args.
+<%- $extra.each |$line| { -%>
+<%= $line %>
+<%- } -%>
+<%- } -%>

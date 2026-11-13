@@ -98,6 +98,7 @@ class bigcouch::config {
       'node_name' => $bigcouch::node_name,
       'cookie'    => $bigcouch::cookie.unwrap,
       'ini_files' => ['/opt/bigcouch/etc/default.ini', "${dir}/local.ini", "${dir}/runtime.ini"],
+      'extra'     => $bigcouch::vm_args,
   })
 
   file { "${dir}/vm.args":

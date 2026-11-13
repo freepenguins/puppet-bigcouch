@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on Debian 12 and 13, from a given APT repository or the server's existing
   sources. Configuration, node name and cookie are in place before the
   package first starts BigCouch; the admin password is stored hashed.
+- `vm_args`, extra lines for `vm.args`.
 - `bigcouch::admin_hash`, which makes BigCouch's `-hashed-` admin hashes.
 
 [1.0.0]: https://github.com/freepenguins/puppet-bigcouch/releases/tag/v1.0.0

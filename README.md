@@ -113,6 +113,21 @@ class { 'bigcouch':
 }
 ```
 
+### Erlang VM arguments
+
+`vm_args` adds lines to `/etc/bigcouch/vm.args`, after the module's own;
+a change restarts BigCouch:
+
+```puppet
+class { 'bigcouch':
+  vm_args => ['+P 1048576', '-kernel net_ticktime 30'],
+}
+```
+
+For an emulator flag the module already sets (`+A 16`, `+K true`), the
+later line wins. `-name`, `-setcookie` and `-couch_ini` come from
+`node_name`, `cookie` and the ini files; don't repeat them here.
+
 ### Node name and cookie
 
 `node_name` defaults to `bigcouch@<fqdn>`, what the package's own

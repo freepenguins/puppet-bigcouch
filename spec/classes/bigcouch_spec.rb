@@ -52,7 +52,25 @@ describe 'bigcouch' do
           expect(content).to match(%r{^-setcookie [A-Za-z0-9]{32}$})
           expect(content).to match(%r{^\+Bd -noinput$})
           expect(content).to match(%r{^-couch_ini /opt/bigcouch/etc/default\.ini /etc/bigcouch/local\.ini /etc/bigcouch/runtime\.ini$})
+          expect(content).not_to include('vm_args')
         end
+      end
+
+      context 'with vm_args' do
+        let(:params) { { vm_args: ['+P 1048576', '-kernel net_ticktime 30'] } }
+
+        it 'appends them after the module\'s lines' do
+          content = file_content('/etc/bigcouch/vm.args')
+          expect(content).to match(%r{^-couch_ini [^\n]+\n\n# From the bigcouch class's vm_args\.\n\+P 1048576\n-kernel net_ticktime 30\n\z})
+        end
+
+        it { is_expected.to contain_file('/etc/bigcouch/vm.args').that_notifies('Class[bigcouch::service]') }
+      end
+
+      context 'with a vm_args line containing a newline' do
+        let(:params) { { vm_args: ["+P 1\n-setcookie x"] } }
+
+        it { is_expected.to compile.and_raise_error(%r{vm_args}) }
       end
 
       context 'with an admin' do

@@ -38,6 +38,11 @@
 #     },
 #   }
 #
+# @example More Erlang VM arguments
+#   class { 'bigcouch':
+#     vm_args => ['+P 1048576', '-kernel net_ticktime 30'],
+#   }
+#
 # @param admin_username
 #   The admin to create. Without one BigCouch runs in "admin party" mode,
 #   where anyone who reaches the port is an admin.
@@ -80,6 +85,12 @@
 # @param settings
 #   More settings for `local.ini`, as `{ section => { key => value } }`,
 #   merged over the module's (yours win).
+# @param vm_args
+#   More lines for `vm.args`, written as given after the module's own, such
+#   as `'+P 1048576'` or `'-kernel net_ticktime 30'`. For an emulator flag
+#   the module already sets (`+A`, `+K`), the later line wins. Don't set
+#   `-name`, `-setcookie` or `-couch_ini` here: use `node_name`, `cookie`
+#   and `settings`.
 class bigcouch (
   Optional[Pattern[/\A[^\s=:]+\z/]]                  $admin_username  = undef,
   Optional[Variant[String[1], Sensitive[String[1]]]] $admin_password  = undef,
@@ -98,6 +109,7 @@ class bigcouch (
   String[1]                                          $group           = 'bigcouch',
   String[1]                                          $service_name    = 'bigcouch',
   Hash[String[1], Hash[String[1], Scalar]]           $settings        = {},
+  Array[Pattern[/\A[^\r\n]+\z/]]                      $vm_args         = [],
 ) {
   if ($admin_username =~ Undef) != ($admin_password =~ Undef) {
     fail('bigcouch: set both admin_username and admin_password, or neither.')
