@@ -27,8 +27,8 @@ class bigcouch::config {
       system     => true,
       home       => $bigcouch::data_dir,
       managehome => false,
-      shell      => '/usr/sbin/nologin',
-      comment    => 'BigCouch',
+      shell      => $bigcouch::user_shell,
+      comment    => $bigcouch::user_comment,
       before     => File[$dir],
     }
 
@@ -37,18 +37,20 @@ class bigcouch::config {
     }
   }
 
+  $view_index_dir = pick($bigcouch::view_index_dir, $bigcouch::data_dir)
+
   file { $dir:
     ensure => directory,
     owner  => 'root',
-    group  => $bigcouch::group,
+    group  => 'root',
     mode   => '0755',
   }
 
-  file { [$bigcouch::data_dir, $bigcouch::log_file.dirname]:
+  file { unique([$bigcouch::data_dir, $view_index_dir, $bigcouch::log_file.dirname]):
     ensure => directory,
     owner  => $bigcouch::user,
     group  => $bigcouch::group,
-    mode   => '0750',
+    mode   => $bigcouch::dir_mode,
   }
 
   # The admin, hashed with a salt that stays the same for this node.
@@ -73,7 +75,7 @@ class bigcouch::config {
     },
     'couchdb' => {
       'database_dir'   => $bigcouch::data_dir,
-      'view_index_dir' => $bigcouch::data_dir,
+      'view_index_dir' => $view_index_dir,
     },
     # One node: one copy of each document, in one shard per database.
     'cluster' => { 'q' => 1, 'n' => 1, 'r' => 1, 'w' => 1 },
@@ -89,34 +91,40 @@ class bigcouch::config {
     ensure    => file,
     owner     => $bigcouch::user,
     group     => $bigcouch::group,
-    mode      => '0640',
+    mode      => $bigcouch::config_mode,
     content   => Sensitive(epp("${module_name}/local.ini.epp", { 'sections' => $_sections })),
     show_diff => false,
   }
 
   # BigCouch saves settings changed through its _config API to the last ini
-  # file, which Puppet only creates.
-  file { "${dir}/runtime.ini":
-    ensure  => file,
-    owner   => $bigcouch::user,
-    group   => $bigcouch::group,
-    mode    => '0640',
-    replace => false,
-    content => "; Settings changed through BigCouch's _config API. Read last, so they win.\n",
+  # file, which Puppet only creates. Without it, they go to local.ini and the
+  # next run overwrites them. An existing runtime.ini is left alone.
+  if $bigcouch::runtime_ini {
+    file { "${dir}/runtime.ini":
+      ensure  => file,
+      owner   => $bigcouch::user,
+      group   => $bigcouch::group,
+      mode    => $bigcouch::config_mode,
+      replace => false,
+      content => "; Settings changed through BigCouch's _config API. Read last, so they win.\n",
+    }
+    $_ini_files = ['/opt/bigcouch/etc/default.ini', "${dir}/local.ini", "${dir}/runtime.ini"]
+  } else {
+    $_ini_files = ['/opt/bigcouch/etc/default.ini', "${dir}/local.ini"]
   }
 
   $_vm_args = epp("${module_name}/vm.args.epp", {
       'node_name' => $bigcouch::node_name,
       'cookie'    => $bigcouch::cookie.unwrap,
-      'ini_files' => ['/opt/bigcouch/etc/default.ini', "${dir}/local.ini", "${dir}/runtime.ini"],
+      'ini_files' => $_ini_files,
       'extra'     => $bigcouch::vm_args,
   })
 
   file { "${dir}/vm.args":
     ensure    => file,
-    owner     => 'root',
+    owner     => $bigcouch::user,
     group     => $bigcouch::group,
-    mode      => '0640',
+    mode      => $bigcouch::config_mode,
     content   => Sensitive($_vm_args),
     show_diff => false,
   }

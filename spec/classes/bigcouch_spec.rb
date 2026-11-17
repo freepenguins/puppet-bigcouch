@@ -27,8 +27,8 @@ describe 'bigcouch' do
         it { is_expected.to contain_package('bigcouch').with_ensure('installed') }
         it { is_expected.to contain_service('bigcouch').with(ensure: 'running', enable: true) }
         it { is_expected.to contain_group('bigcouch').with(system: true) }
-        it { is_expected.to contain_user('bigcouch').with(system: true, gid: 'bigcouch', home: '/var/lib/bigcouch', shell: '/usr/sbin/nologin') }
-        it { is_expected.to contain_file('/etc/bigcouch').with(ensure: 'directory', owner: 'root', group: 'bigcouch', mode: '0755') }
+        it { is_expected.to contain_user('bigcouch').with(system: true, gid: 'bigcouch', home: '/var/lib/bigcouch', shell: '/sbin/nologin', comment: 'BigCouch user') }
+        it { is_expected.to contain_file('/etc/bigcouch').with(ensure: 'directory', owner: 'root', group: 'root', mode: '0755') }
         it { is_expected.to contain_file('/var/lib/bigcouch').with(ensure: 'directory', owner: 'bigcouch', mode: '0750') }
         it { is_expected.to contain_file('/var/log/bigcouch').with(ensure: 'directory', owner: 'bigcouch', mode: '0750') }
 
@@ -46,7 +46,7 @@ describe 'bigcouch' do
         it { is_expected.to contain_file('/etc/bigcouch/runtime.ini').with(replace: false, owner: 'bigcouch', mode: '0640') }
 
         it 'writes vm.args with the node name, a stable cookie and the ini chain' do
-          is_expected.to contain_file('/etc/bigcouch/vm.args').with(owner: 'root', group: 'bigcouch', mode: '0640', show_diff: false)
+          is_expected.to contain_file('/etc/bigcouch/vm.args').with(owner: 'bigcouch', group: 'bigcouch', mode: '0640', show_diff: false)
           content = file_content('/etc/bigcouch/vm.args')
           expect(content).to match(%r{^-name bigcouch@#{Regexp.escape(fqdn)}$})
           expect(content).to match(%r{^-setcookie [A-Za-z0-9]{32}$})
@@ -54,6 +54,52 @@ describe 'bigcouch' do
           expect(content).to match(%r{^-couch_ini /opt/bigcouch/etc/default\.ini /etc/bigcouch/local\.ini /etc/bigcouch/runtime\.ini$})
           expect(content).not_to include('vm_args')
         end
+      end
+
+      context 'like 2600Hz\'s BigCouch on CentOS 7' do
+        let(:params) do
+          {
+            config_dir: '/etc/kazoo/bigcouch',
+            data_dir: '/srv/db',
+            view_index_dir: '/srv/view_index',
+            group: 'daemon',
+            manage_group: false,
+            dir_mode: '0755',
+            config_mode: '0644',
+            runtime_ini: false,
+          }
+        end
+
+        it { is_expected.to compile.with_all_deps }
+        it { is_expected.not_to contain_group('daemon') }
+        it { is_expected.to contain_user('bigcouch').with(gid: 'daemon', shell: '/sbin/nologin', comment: 'BigCouch user') }
+        it { is_expected.not_to contain_file('/srv') }
+        it { is_expected.to contain_file('/etc/kazoo/bigcouch').with(owner: 'root', group: 'root', mode: '0755') }
+
+        ['/srv/db', '/srv/view_index', '/var/log/bigcouch'].each do |path|
+          it { is_expected.to contain_file(path).with(ensure: 'directory', owner: 'bigcouch', group: 'daemon', mode: '0755') }
+        end
+
+        it { is_expected.to contain_file('/etc/kazoo/bigcouch/local.ini').with(owner: 'bigcouch', group: 'daemon', mode: '0644') }
+        it { is_expected.to contain_file('/etc/kazoo/bigcouch/vm.args').with(owner: 'bigcouch', group: 'daemon', mode: '0644') }
+        it { is_expected.not_to contain_file('/etc/kazoo/bigcouch/runtime.ini') }
+
+        it 'reads local.ini last, and keeps databases and view indexes apart' do
+          expect(file_content('/etc/kazoo/bigcouch/vm.args')).to match(%r{^-couch_ini /opt/bigcouch/etc/default\.ini /etc/kazoo/bigcouch/local\.ini$})
+          expect(file_content('/etc/kazoo/bigcouch/local.ini')).to match(%r{^\[couchdb\]\ndatabase_dir = /srv/db\nview_index_dir = /srv/view_index$})
+        end
+      end
+
+      context 'with view_index_dir equal to data_dir' do
+        let(:params) { { view_index_dir: '/var/lib/bigcouch' } }
+
+        it { is_expected.to compile.with_all_deps }
+      end
+
+      context 'with user_shell and user_comment' do
+        let(:params) { { user_shell: '/usr/sbin/nologin', user_comment: 'BigCouch' } }
+
+        it { is_expected.to contain_user('bigcouch').with(shell: '/usr/sbin/nologin', comment: 'BigCouch') }
       end
 
       context 'with uid and gid' do

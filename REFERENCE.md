@@ -95,11 +95,17 @@ The following parameters are available in the `bigcouch` class:
 * [`cookie`](#-bigcouch--cookie)
 * [`config_dir`](#-bigcouch--config_dir)
 * [`data_dir`](#-bigcouch--data_dir)
+* [`view_index_dir`](#-bigcouch--view_index_dir)
 * [`log_file`](#-bigcouch--log_file)
+* [`dir_mode`](#-bigcouch--dir_mode)
+* [`config_mode`](#-bigcouch--config_mode)
+* [`runtime_ini`](#-bigcouch--runtime_ini)
 * [`user`](#-bigcouch--user)
 * [`group`](#-bigcouch--group)
 * [`manage_user`](#-bigcouch--manage_user)
 * [`manage_group`](#-bigcouch--manage_group)
+* [`user_shell`](#-bigcouch--user_shell)
+* [`user_comment`](#-bigcouch--user_comment)
 * [`uid`](#-bigcouch--uid)
 * [`gid`](#-bigcouch--gid)
 * [`service_name`](#-bigcouch--service_name)
@@ -196,7 +202,7 @@ Default value: `Sensitive(stdlib::fqdn_rand_string(32, undef, 'bigcouch cookie')
 
 Data type: `Stdlib::Absolutepath`
 
-Where `local.ini`, `runtime.ini` and `vm.args` go. The package's
+Where `local.ini`, `vm.args` and `runtime.ini` (see `runtime_ini`) go. The package's
 `/opt/bigcouch/bin/bigcouch` reads `/etc/bigcouch/vm.args`.
 
 Default value: `'/etc/bigcouch'`
@@ -205,17 +211,56 @@ Default value: `'/etc/bigcouch'`
 
 Data type: `Stdlib::Absolutepath`
 
-Databases and view indexes.
+Databases (`database_dir`), and view indexes unless `view_index_dir` is
+set. Puppet manages this directory's owner, group and mode, so don't
+point it at a shared path such as `/srv`: give a directory of its own,
+such as `/srv/db`.
 
 Default value: `'/var/lib/bigcouch'`
+
+##### <a name="-bigcouch--view_index_dir"></a>`view_index_dir`
+
+Data type: `Optional[Stdlib::Absolutepath]`
+
+View indexes (`view_index_dir`). Unset, they go in `data_dir`.
+
+Default value: `undef`
 
 ##### <a name="-bigcouch--log_file"></a>`log_file`
 
 Data type: `Stdlib::Absolutepath`
 
-BigCouch's log.
+BigCouch's log. Puppet manages its directory like `data_dir`.
 
 Default value: `'/var/log/bigcouch/bigcouch.log'`
+
+##### <a name="-bigcouch--dir_mode"></a>`dir_mode`
+
+Data type: `Stdlib::Filemode`
+
+Mode of `data_dir`, `view_index_dir` and the log directory.
+
+Default value: `'0750'`
+
+##### <a name="-bigcouch--config_mode"></a>`config_mode`
+
+Data type: `Stdlib::Filemode`
+
+Mode of `local.ini`, `runtime.ini` and `vm.args`. They hold the admin's
+password hash and the Erlang cookie (which gives a shell on the node),
+so the default keeps them from other users.
+
+Default value: `'0640'`
+
+##### <a name="-bigcouch--runtime_ini"></a>`runtime_ini`
+
+Data type: `Boolean`
+
+Whether to add `runtime.ini` as the last configuration file, where
+BigCouch saves settings changed through its _config API. With false,
+BigCouch saves them to `local.ini`, which Puppet then overwrites.
+
+Default value: `true`
 
 ##### <a name="-bigcouch--user"></a>`user`
 
@@ -237,8 +282,8 @@ Default value: `'bigcouch'`
 
 Data type: `Boolean`
 
-Whether to create `user` (a system user with home `data_dir` and no
-login shell). With false the user must already exist, from another
+Whether to create `user` (a system user with home `data_dir`, shell
+`user_shell` and comment `user_comment`). With false the user must already exist, from another
 class or a directory service, before the class runs: the files the
 module writes are owned by it.
 
@@ -252,6 +297,23 @@ Whether to create `group` (a system group). With false the group must
 already exist.
 
 Default value: `true`
+
+##### <a name="-bigcouch--user_shell"></a>`user_shell`
+
+Data type: `Stdlib::Absolutepath`
+
+The user's shell, when `manage_user` is true. `/sbin/nologin` exists on
+Debian 12 and 13 (merged `/usr`) and on EL.
+
+Default value: `'/sbin/nologin'`
+
+##### <a name="-bigcouch--user_comment"></a>`user_comment`
+
+Data type: `String`
+
+The user's comment (GECOS), when `manage_user` is true.
+
+Default value: `'BigCouch user'`
 
 ##### <a name="-bigcouch--uid"></a>`uid`
 

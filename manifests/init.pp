@@ -70,24 +70,44 @@
 #   Erlang distribution cookie. Nodes of one cluster must share it. Defaults
 #   to a random string that stays the same for this node.
 # @param config_dir
-#   Where `local.ini`, `runtime.ini` and `vm.args` go. The package's
+#   Where `local.ini`, `vm.args` and `runtime.ini` (see `runtime_ini`) go. The package's
 #   `/opt/bigcouch/bin/bigcouch` reads `/etc/bigcouch/vm.args`.
 # @param data_dir
-#   Databases and view indexes.
+#   Databases (`database_dir`), and view indexes unless `view_index_dir` is
+#   set. Puppet manages this directory's owner, group and mode, so don't
+#   point it at a shared path such as `/srv`: give a directory of its own,
+#   such as `/srv/db`.
+# @param view_index_dir
+#   View indexes (`view_index_dir`). Unset, they go in `data_dir`.
 # @param log_file
-#   BigCouch's log.
+#   BigCouch's log. Puppet manages its directory like `data_dir`.
+# @param dir_mode
+#   Mode of `data_dir`, `view_index_dir` and the log directory.
+# @param config_mode
+#   Mode of `local.ini`, `runtime.ini` and `vm.args`. They hold the admin's
+#   password hash and the Erlang cookie (which gives a shell on the node),
+#   so the default keeps them from other users.
+# @param runtime_ini
+#   Whether to add `runtime.ini` as the last configuration file, where
+#   BigCouch saves settings changed through its _config API. With false,
+#   BigCouch saves them to `local.ini`, which Puppet then overwrites.
 # @param user
 #   The user BigCouch runs as, which owns `data_dir`.
 # @param group
 #   The group of `user`.
 # @param manage_user
-#   Whether to create `user` (a system user with home `data_dir` and no
-#   login shell). With false the user must already exist, from another
+#   Whether to create `user` (a system user with home `data_dir`, shell
+#   `user_shell` and comment `user_comment`). With false the user must already exist, from another
 #   class or a directory service, before the class runs: the files the
 #   module writes are owned by it.
 # @param manage_group
 #   Whether to create `group` (a system group). With false the group must
 #   already exist.
+# @param user_shell
+#   The user's shell, when `manage_user` is true. `/sbin/nologin` exists on
+#   Debian 12 and 13 (merged `/usr`) and on EL.
+# @param user_comment
+#   The user's comment (GECOS), when `manage_user` is true.
 # @param uid
 #   The user's uid, when `manage_user` is true. Unset, the system picks one.
 # @param gid
@@ -116,11 +136,17 @@ class bigcouch (
   Variant[Pattern[/\A[A-Za-z0-9]+\z/], Sensitive[Pattern[/\A[A-Za-z0-9]+\z/]]] $cookie = Sensitive(stdlib::fqdn_rand_string(32, undef, 'bigcouch cookie')),
   Stdlib::Absolutepath                               $config_dir      = '/etc/bigcouch',
   Stdlib::Absolutepath                               $data_dir        = '/var/lib/bigcouch',
+  Optional[Stdlib::Absolutepath]                     $view_index_dir  = undef,
   Stdlib::Absolutepath                               $log_file        = '/var/log/bigcouch/bigcouch.log',
+  Stdlib::Filemode                                   $dir_mode        = '0750',
+  Stdlib::Filemode                                   $config_mode     = '0640',
+  Boolean                                            $runtime_ini     = true,
   String[1]                                          $user            = 'bigcouch',
   String[1]                                          $group           = 'bigcouch',
   Boolean                                            $manage_user     = true,
   Boolean                                            $manage_group    = true,
+  Stdlib::Absolutepath                               $user_shell      = '/sbin/nologin',
+  String                                             $user_comment    = 'BigCouch user',
   Optional[Integer[0]]                               $uid             = undef,
   Optional[Integer[0]]                               $gid             = undef,
   String[1]                                          $service_name    = 'bigcouch',

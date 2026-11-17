@@ -47,10 +47,10 @@ The class:
   its `/opt/bigcouch`, and with `repository` an APT source.
 * The `bigcouch` user and group (unless `manage_user`/`manage_group` are
   false), `/var/lib/bigcouch` (databases and view
-  indexes) and `/var/log/bigcouch`.
-* `/etc/bigcouch`: `local.ini` (managed), `runtime.ini` (created once;
-  changes made through BigCouch's `_config` API are saved there) and
-  `vm.args`.
+  indexes, or `data_dir` and `view_index_dir`) and `/var/log/bigcouch`.
+* `/etc/bigcouch`: `local.ini` (managed), `runtime.ini` (created once,
+  unless `runtime_ini` is false; changes made through BigCouch's `_config`
+  API are saved there) and `vm.args`.
 
 ### Requirements
 
@@ -152,6 +152,35 @@ before the class runs, because the module's files are owned by them. A
 changed `uid` or `gid` changes the account but not the ownership of files
 already on disk.
 
+### File modes
+
+`local.ini` and `vm.args` hold the admin's password hash and the Erlang
+cookie, which lets anyone who has it run code on the node, so by default
+they're `0640` and the data and log directories `0750`. `config_mode` and
+`dir_mode` change that.
+
+### An existing 2600Hz BigCouch
+
+2600Hz's BigCouch for Kazoo on CentOS 7 keeps its configuration in
+`/etc/kazoo/bigcouch`, databases in `/srv/db` and view indexes in
+`/srv/view_index`, and runs as `bigcouch` with primary group `daemon`. To
+take one over without moving anything, in Hiera:
+
+```yaml
+bigcouch::config_dir: '/etc/kazoo/bigcouch'
+bigcouch::data_dir: '/srv/db'
+bigcouch::group: 'daemon'
+bigcouch::manage_group: false
+bigcouch::runtime_ini: false
+bigcouch::view_index_dir: '/srv/view_index'
+```
+
+Point `data_dir` at a directory of its own, not at `/srv`: the module
+manages its owner, group and mode. Without `runtime.ini`, settings changed
+through the `_config` API go to `local.ini`, which the next Puppet run
+overwrites, as on 2600Hz's servers. Puppet still writes `local.ini` and
+`vm.args` in its own layout, so the first run changes their content.
+
 ### Node name and cookie
 
 `node_name` defaults to `bigcouch@<fqdn>`, what the package's own
@@ -197,6 +226,10 @@ See [REFERENCE.md](REFERENCE.md).
 * The package's systemd unit runs BigCouch as `bigcouch` and its postinst
   creates and chowns `bigcouch`, so keep `user` and `group` at
   `bigcouch` unless you also override the unit.
+* Only APT sources are managed (`repository`). On another system, such as
+  an existing 2600Hz BigCouch on CentOS 7, leave `repository` unset: the
+  package must already be installed or come from the system's own
+  repositories.
 * No TLS; put a proxy in front if BigCouch must be reached over a network.
 
 ## Development
