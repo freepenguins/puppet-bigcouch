@@ -50,6 +50,7 @@ describe 'bigcouch' do
           content = file_content('/etc/bigcouch/vm.args')
           expect(content).to match(%r{^-name bigcouch@#{Regexp.escape(fqdn)}$})
           expect(content).to match(%r{^-setcookie [A-Za-z0-9]{32}$})
+          expect(content).to match(%r{^\+A 16$})
           expect(content).to match(%r{^\+Bd -noinput$})
           expect(content).to match(%r{^-couch_ini /opt/bigcouch/etc/default\.ini /etc/bigcouch/local\.ini /etc/bigcouch/runtime\.ini$})
           expect(content).not_to include('vm_args')
@@ -67,6 +68,13 @@ describe 'bigcouch' do
             dir_mode: '0755',
             config_mode: '0644',
             runtime_ini: false,
+            user_home: '/srv',
+            bind_address: '0.0.0.0',
+            node_name: 'bigcouch@kcof',
+            cookie: sensitive('change_me'),
+            async_threads: 25,
+            detached: true,
+            settings: { 'cluster' => { 'z' => 1 } },
           }
         end
 
@@ -84,9 +92,24 @@ describe 'bigcouch' do
         it { is_expected.to contain_file('/etc/kazoo/bigcouch/vm.args').with(owner: 'bigcouch', group: 'daemon', mode: '0644') }
         it { is_expected.not_to contain_file('/etc/kazoo/bigcouch/runtime.ini') }
 
-        it 'reads local.ini last, and keeps databases and view indexes apart' do
-          expect(file_content('/etc/kazoo/bigcouch/vm.args')).to match(%r{^-couch_ini /opt/bigcouch/etc/default\.ini /etc/kazoo/bigcouch/local\.ini$})
-          expect(file_content('/etc/kazoo/bigcouch/local.ini')).to match(%r{^\[couchdb\]\ndatabase_dir = /srv/db\nview_index_dir = /srv/view_index$})
+        it { is_expected.to contain_user('bigcouch').with_home('/srv') }
+
+        it 'writes the same VM arguments, reading local.ini last' do
+          vm_args = file_content('/etc/kazoo/bigcouch/vm.args')
+          expect(vm_args).to match(%r{^-name bigcouch@kcof$})
+          expect(vm_args).to match(%r{^-setcookie change_me$})
+          expect(vm_args).to match(%r{^\+A 25$})
+          expect(vm_args).to match(%r{^\+Bd -noinput -detached$})
+          expect(vm_args).to match(%r{^-couch_ini /opt/bigcouch/etc/default\.ini /etc/kazoo/bigcouch/local\.ini$})
+        end
+
+        it 'writes the same settings, with databases and view indexes apart' do
+          content = file_content('/etc/kazoo/bigcouch/local.ini')
+          expect(content).to match(%r{^\[chttpd\]\nbind_address = 0\.0\.0\.0\nport = 5984\nrequire_valid_user = false$})
+          expect(content).to match(%r{^\[httpd\]\nbind_address = 0\.0\.0\.0\nport = 5986\nrequire_valid_user = false$})
+          expect(content).to match(%r{^\[cluster\]\nn = 1\nq = 1\nr = 1\nw = 1\nz = 1$})
+          expect(content).to match(%r{^\[couchdb\]\ndatabase_dir = /srv/db\nview_index_dir = /srv/view_index$})
+          expect(content).to match(%r{^\[log\]\nfile = /var/log/bigcouch/bigcouch\.log$})
         end
       end
 
@@ -96,10 +119,11 @@ describe 'bigcouch' do
         it { is_expected.to compile.with_all_deps }
       end
 
-      context 'with user_shell and user_comment' do
-        let(:params) { { user_shell: '/usr/sbin/nologin', user_comment: 'BigCouch' } }
+      context 'with user_home, user_shell and user_comment' do
+        let(:params) { { user_home: '/srv', user_shell: '/usr/sbin/nologin', user_comment: 'BigCouch' } }
 
-        it { is_expected.to contain_user('bigcouch').with(shell: '/usr/sbin/nologin', comment: 'BigCouch') }
+        it { is_expected.to contain_user('bigcouch').with(home: '/srv', shell: '/usr/sbin/nologin', comment: 'BigCouch') }
+        it { is_expected.not_to contain_file('/srv') }
       end
 
       context 'with uid and gid' do
@@ -134,6 +158,12 @@ describe 'bigcouch' do
         end
 
         it { is_expected.to contain_file('/etc/bigcouch/vm.args').that_notifies('Class[bigcouch::service]') }
+      end
+
+      context 'with a cookie that has other characters' do
+        let(:params) { { cookie: 'change-me' } }
+
+        it { is_expected.to compile.and_raise_error(%r{cookie}) }
       end
 
       context 'with a vm_args line containing a newline' do

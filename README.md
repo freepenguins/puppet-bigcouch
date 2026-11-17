@@ -162,24 +162,37 @@ they're `0640` and the data and log directories `0750`. `config_mode` and
 ### An existing 2600Hz BigCouch
 
 2600Hz's BigCouch for Kazoo on CentOS 7 keeps its configuration in
-`/etc/kazoo/bigcouch`, databases in `/srv/db` and view indexes in
-`/srv/view_index`, and runs as `bigcouch` with primary group `daemon`. To
-take one over without moving anything, in Hiera:
+`/etc/kazoo/bigcouch` (no `runtime.ini`), databases in `/srv/db` and view
+indexes in `/srv/view_index`, runs as `bigcouch` with primary group
+`daemon` and home `/srv`, uses `+A 25`, and is started by an init script
+that expects it to detach. To take one over without moving anything, in
+Hiera (the node name, cookie and addresses are that server's):
 
 ```yaml
+bigcouch::async_threads: 25
 bigcouch::config_dir: '/etc/kazoo/bigcouch'
+bigcouch::config_mode: '0644'
+bigcouch::cookie: "%{lookup('creds::bigcouch::cookie')}"
 bigcouch::data_dir: '/srv/db'
+bigcouch::detached: true
+bigcouch::dir_mode: '0755'
 bigcouch::group: 'daemon'
 bigcouch::manage_group: false
+bigcouch::node_name: 'bigcouch@<short hostname>'
 bigcouch::runtime_ini: false
+bigcouch::user_home: '/srv'
 bigcouch::view_index_dir: '/srv/view_index'
 ```
 
 Point `data_dir` at a directory of its own, not at `/srv`: the module
 manages its owner, group and mode. Without `runtime.ini`, settings changed
 through the `_config` API go to `local.ini`, which the next Puppet run
-overwrites, as on 2600Hz's servers. Puppet still writes `local.ini` and
-`vm.args` in its own layout, so the first run changes their content.
+overwrites, as on 2600Hz's servers. `config_mode` and `dir_mode` above keep
+2600Hz's world-readable modes; leave them out to protect the admin hash and
+the cookie. The node name must stay what the server already uses, or its
+shard maps no longer match. Puppet writes `local.ini` and `vm.args` in its
+own layout (sorted, with its own comments), so the first run rewrites them
+with the same settings and restarts BigCouch once.
 
 ### Node name and cookie
 

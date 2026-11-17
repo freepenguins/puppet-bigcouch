@@ -67,8 +67,10 @@
 #   Erlang node name. Defaults to `bigcouch@<fqdn>`, what the package's own
 #   `-name bigcouch` becomes. Set it before the first run (see above).
 # @param cookie
-#   Erlang distribution cookie. Nodes of one cluster must share it. Defaults
-#   to a random string that stays the same for this node.
+#   Erlang distribution cookie (letters, digits and `_`). Nodes of one
+#   cluster must share it, and anyone who has it and reaches the
+#   distribution ports can run code on the node. Defaults to a random string
+#   that stays the same for this node.
 # @param config_dir
 #   Where `local.ini`, `vm.args` and `runtime.ini` (see `runtime_ini`) go. The package's
 #   `/opt/bigcouch/bin/bigcouch` reads `/etc/bigcouch/vm.args`.
@@ -96,13 +98,15 @@
 # @param group
 #   The group of `user`.
 # @param manage_user
-#   Whether to create `user` (a system user with home `data_dir`, shell
+#   Whether to create `user` (a system user with home `user_home`, shell
 #   `user_shell` and comment `user_comment`). With false the user must already exist, from another
 #   class or a directory service, before the class runs: the files the
 #   module writes are owned by it.
 # @param manage_group
 #   Whether to create `group` (a system group). With false the group must
 #   already exist.
+# @param user_home
+#   The user's home, when `manage_user` is true. Unset, `data_dir`.
 # @param user_shell
 #   The user's shell, when `manage_user` is true. `/sbin/nologin` exists on
 #   Debian 12 and 13 (merged `/usr`) and on EL.
@@ -117,6 +121,13 @@
 # @param settings
 #   More settings for `local.ini`, as `{ section => { key => value } }`,
 #   merged over the module's (yours win).
+# @param async_threads
+#   Erlang's async I/O thread pool (`+A` in `vm.args`).
+# @param detached
+#   Whether BigCouch detaches from the terminal (`-detached` in `vm.args`).
+#   Only for a service whose init script expects BigCouch to fork, such as
+#   2600Hz's on CentOS 7; under a systemd unit that runs it in the
+#   foreground, as the Debian package's does, it must stay false.
 # @param vm_args
 #   More lines for `vm.args`, written as given after the module's own, such
 #   as `'+P 1048576'` or `'-kernel net_ticktime 30'`. For an emulator flag
@@ -133,7 +144,7 @@ class bigcouch (
   Stdlib::Port                                       $port            = 5984,
   Stdlib::Port                                       $node_local_port = 5986,
   Pattern[/\A[^@\s]+@[^@\s]+\z/]                     $node_name       = "bigcouch@${facts['networking']['fqdn']}",
-  Variant[Pattern[/\A[A-Za-z0-9]+\z/], Sensitive[Pattern[/\A[A-Za-z0-9]+\z/]]] $cookie = Sensitive(stdlib::fqdn_rand_string(32, undef, 'bigcouch cookie')),
+  Variant[Pattern[/\A\w+\z/], Sensitive[Pattern[/\A\w+\z/]]] $cookie = Sensitive(stdlib::fqdn_rand_string(32, undef, 'bigcouch cookie')),
   Stdlib::Absolutepath                               $config_dir      = '/etc/bigcouch',
   Stdlib::Absolutepath                               $data_dir        = '/var/lib/bigcouch',
   Optional[Stdlib::Absolutepath]                     $view_index_dir  = undef,
@@ -145,12 +156,15 @@ class bigcouch (
   String[1]                                          $group           = 'bigcouch',
   Boolean                                            $manage_user     = true,
   Boolean                                            $manage_group    = true,
+  Optional[Stdlib::Absolutepath]                     $user_home       = undef,
   Stdlib::Absolutepath                               $user_shell      = '/sbin/nologin',
   String                                             $user_comment    = 'BigCouch user',
   Optional[Integer[0]]                               $uid             = undef,
   Optional[Integer[0]]                               $gid             = undef,
   String[1]                                          $service_name    = 'bigcouch',
   Hash[String[1], Hash[String[1], Scalar]]           $settings        = {},
+  Integer[0, 1024]                                   $async_threads   = 16,
+  Boolean                                            $detached        = false,
   Array[Pattern[/\A[^\r\n]+\z/]]                      $vm_args         = [],
 ) {
   if ($admin_username =~ Undef) != ($admin_password =~ Undef) {

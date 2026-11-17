@@ -16,10 +16,13 @@ without changing its files' owners or modes.
 - `dir_mode` (default `0750`) and `config_mode` (default `0640`).
 - `runtime_ini` (default true): false leaves `runtime.ini` out of the
   configuration chain and doesn't create it.
-- `user_shell` and `user_comment`.
+- `user_home` (default `data_dir`), `user_shell` and `user_comment`.
+- `async_threads` (`+A`, default 16) and `detached` (default false), for
+  an init script that expects BigCouch to fork.
 
 ### Changed
 
+- `cookie` may contain `_`.
 - The user's shell is `/sbin/nologin` and its comment `BigCouch user`, as
   on 2600Hz's servers (`/sbin/nologin` exists on Debian 12 and 13 too).
 - The configuration directory is group `root` (was `group`); it's `0755`,

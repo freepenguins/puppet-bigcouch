@@ -104,12 +104,15 @@ The following parameters are available in the `bigcouch` class:
 * [`group`](#-bigcouch--group)
 * [`manage_user`](#-bigcouch--manage_user)
 * [`manage_group`](#-bigcouch--manage_group)
+* [`user_home`](#-bigcouch--user_home)
 * [`user_shell`](#-bigcouch--user_shell)
 * [`user_comment`](#-bigcouch--user_comment)
 * [`uid`](#-bigcouch--uid)
 * [`gid`](#-bigcouch--gid)
 * [`service_name`](#-bigcouch--service_name)
 * [`settings`](#-bigcouch--settings)
+* [`async_threads`](#-bigcouch--async_threads)
+* [`detached`](#-bigcouch--detached)
 * [`vm_args`](#-bigcouch--vm_args)
 
 ##### <a name="-bigcouch--admin_username"></a>`admin_username`
@@ -191,10 +194,12 @@ Default value: `"bigcouch@${facts['networking']['fqdn']}"`
 
 ##### <a name="-bigcouch--cookie"></a>`cookie`
 
-Data type: `Variant[Pattern[/\A[A-Za-z0-9]+\z/], Sensitive[Pattern[/\A[A-Za-z0-9]+\z/]]]`
+Data type: `Variant[Pattern[/\A\w+\z/], Sensitive[Pattern[/\A\w+\z/]]]`
 
-Erlang distribution cookie. Nodes of one cluster must share it. Defaults
-to a random string that stays the same for this node.
+Erlang distribution cookie (letters, digits and `_`). Nodes of one
+cluster must share it, and anyone who has it and reaches the
+distribution ports can run code on the node. Defaults to a random string
+that stays the same for this node.
 
 Default value: `Sensitive(stdlib::fqdn_rand_string(32, undef, 'bigcouch cookie'))`
 
@@ -282,7 +287,7 @@ Default value: `'bigcouch'`
 
 Data type: `Boolean`
 
-Whether to create `user` (a system user with home `data_dir`, shell
+Whether to create `user` (a system user with home `user_home`, shell
 `user_shell` and comment `user_comment`). With false the user must already exist, from another
 class or a directory service, before the class runs: the files the
 module writes are owned by it.
@@ -297,6 +302,14 @@ Whether to create `group` (a system group). With false the group must
 already exist.
 
 Default value: `true`
+
+##### <a name="-bigcouch--user_home"></a>`user_home`
+
+Data type: `Optional[Stdlib::Absolutepath]`
+
+The user's home, when `manage_user` is true. Unset, `data_dir`.
+
+Default value: `undef`
 
 ##### <a name="-bigcouch--user_shell"></a>`user_shell`
 
@@ -347,6 +360,25 @@ More settings for `local.ini`, as `{ section => { key => value } }`,
 merged over the module's (yours win).
 
 Default value: `{}`
+
+##### <a name="-bigcouch--async_threads"></a>`async_threads`
+
+Data type: `Integer[0, 1024]`
+
+Erlang's async I/O thread pool (`+A` in `vm.args`).
+
+Default value: `16`
+
+##### <a name="-bigcouch--detached"></a>`detached`
+
+Data type: `Boolean`
+
+Whether BigCouch detaches from the terminal (`-detached` in `vm.args`).
+Only for a service whose init script expects BigCouch to fork, such as
+2600Hz's on CentOS 7; under a systemd unit that runs it in the
+foreground, as the Debian package's does, it must stay false.
+
+Default value: `false`
 
 ##### <a name="-bigcouch--vm_args"></a>`vm_args`
 

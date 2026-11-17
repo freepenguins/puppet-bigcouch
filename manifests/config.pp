@@ -25,7 +25,7 @@ class bigcouch::config {
       uid        => $bigcouch::uid,
       gid        => $bigcouch::group,
       system     => true,
-      home       => $bigcouch::data_dir,
+      home       => pick($bigcouch::user_home, $bigcouch::data_dir),
       managehome => false,
       shell      => $bigcouch::user_shell,
       comment    => $bigcouch::user_comment,
@@ -116,6 +116,8 @@ class bigcouch::config {
   $_vm_args = epp("${module_name}/vm.args.epp", {
       'node_name' => $bigcouch::node_name,
       'cookie'    => $bigcouch::cookie.unwrap,
+      'async'     => $bigcouch::async_threads,
+      'detached'  => $bigcouch::detached,
       'ini_files' => $_ini_files,
       'extra'     => $bigcouch::vm_args,
   })
